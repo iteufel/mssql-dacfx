@@ -1,0 +1,73 @@
+{
+  "name": "mssql-dacfx",
+  "version": "0.1.0",
+  "description": "Microsoft SQL Server DacFx schema validation, DACPAC builds and offline deployment scripts for Bun, Node.js and WebAssembly.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "browser": {
+        "types": "./dist/browser.d.ts",
+        "default": "./dist/browser.js"
+      },
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./browser": {
+      "types": "./dist/browser.d.ts",
+      "default": "./dist/browser.js"
+    },
+    "./package.json": "./package.json",
+    "./assets/*": "./assets/*"
+  },
+  "files": [
+    "dist",
+    "assets/host",
+    "assets/wasm",
+    "assets/icon.svg",
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "licenses"
+  ],
+  "sideEffects": false,
+  "keywords": [
+    "mssql",
+    "sql-server",
+    "dacfx",
+    "dacpac",
+    "wasm",
+    "bun",
+    "typescript"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:js": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test test/*.test.mjs",
+    "test:bun": "bun test test/integration.test.mjs",
+    "test:browser": "node scripts/test-browser.mjs",
+    "test:package": "node scripts/test-package.mjs",
+    "prepack": "node scripts/check-package.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.7",
+    "playwright": "1.64.1",
+    "typescript": "6.0.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iteufel/mssql-project-sql.git"
+  },
+  "homepage": "https://github.com/iteufel/mssql-project-sql#readme",
+  "bugs": {
+    "url": "https://github.com/iteufel/mssql-project-sql/issues"
+  }
+}

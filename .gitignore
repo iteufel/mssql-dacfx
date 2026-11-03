@@ -1,0 +1,9 @@
+node_modules/
+dist/
+artifacts/
+assets/host/
+assets/wasm/
+dotnet/**/bin/
+dotnet/**/obj/
+.cache/
+*.tgz
