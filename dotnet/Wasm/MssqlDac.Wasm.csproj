@@ -6,8 +6,8 @@
     <BlazorWebAssemblyLoadAllGlobalizationData>true</BlazorWebAssemblyLoadAllGlobalizationData>
   </PropertyGroup>
   <ItemGroup>
-    <!-- SDK distributions can select different servicing packs for the same SDK version. -->
-    <KnownWebAssemblySdkPack Update="Microsoft.NET.Sdk.WebAssembly.Pack" WebAssemblySdkPackVersion="10.0.13" />
+    <!-- An explicit reference takes precedence over packs selected by installed workloads. -->
+    <PackageReference Include="Microsoft.NET.Sdk.WebAssembly.Pack" Version="10.0.13" PrivateAssets="all" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.30" />
     <Compile Include="../Shared/*.cs" />
   </ItemGroup>
