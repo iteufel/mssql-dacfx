@@ -110,8 +110,8 @@ Browser bundlers can also select the browser export from `mssql-dacfx` automatic
 
 Bundle this worker entry with your application and serve it with the isolation headers above:
 
-```ts
-// dacfx-worker.ts
+```js
+// dacfx-worker.mjs
 import { createDacFx } from 'mssql-dacfx/browser';
 
 const ready = createDacFx({ assetsPath: '/assets/dacfx' });
@@ -125,7 +125,7 @@ self.onmessage = async ({ data }) => {
 };
 ```
 
-Create it with `new Worker(new URL('./dacfx-worker.ts', import.meta.url), { type: 'module' })`. A worker is useful for large schemas because input/output encoding and initialization still do work in the caller's JS realm. Terminating your application worker releases its runtime.
+Create it with `new Worker(new URL('./dacfx-worker.mjs', import.meta.url), { type: 'module' })`. A worker is useful for large schemas because input/output encoding and initialization still do work in the caller's JS realm. Terminating your application worker releases its runtime.
 
 ## API reference
 
