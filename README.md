@@ -2,38 +2,38 @@
 
 # mssql-dacfx
 
-Microsoft SQL Server DacFx for Bun, Node.js, browsers, and module workers. Typed asynchronous APIs for schema validation, DACPAC inspection and creation, and offline deployment scripts/reports. Uses the real `Microsoft.SqlServer.Dac` and `Microsoft.SqlServer.Dac.Model` APIs from **Microsoft.SqlServer.DacFx 170.5.96**.
+Microsoft SQL Server DacFx for **Bun, Node.js, browsers, and module workers**. Validate SQL schemas, build and inspect DACPACs, and generate offline deployment scripts and reports with the real **Microsoft.SqlServer.DacFx 170.5.96** engine.
 
-Inspired by [iteufel/mssql-parser](https://github.com/iteufel/mssql-parser): a shared C# bridge, a precompiled .NET server host, and a separate .NET WebAssembly build. The bridge and TypeScript wrapper here are implemented independently.
+**All six package operations work in WebAssembly.** WASM runs locally and requires no installed .NET runtime, native addon, SQL Server connection, or remote service. A separate .NET host is also available for server applications.
 
-| Operation | Bun / Node (.NET host) | WebAssembly (Bun / Node / browser / worker) |
+Inspired by [iteufel/mssql-parser](https://github.com/iteufel/mssql-parser). The TypeScript wrapper and C# bridge are implemented independently.
+
+| Operation | WASM: Bun / Node / browser / worker | .NET host: Bun / Node |
 | --- | --- | --- |
-| Validate SQL schema, including semantic references | Yes | Yes |
-| Inspect DACPAC metadata and object CREATE scripts | Yes | Yes |
-| Build DACPAC from SQL files | Yes | Unavailable |
-| Generate CREATE / deployment scripts and XML reports | Yes | Unavailable |
-
-The full server API requires **Node.js 22+ or Bun 1.4+** and the **.NET 8 or newer runtime** on PATH. Consumers need no .NET SDK, compilation, native npm addons, or install scripts. WASM requires no installed .NET runtime.
+| Validate SQL syntax and semantic references | Yes | Yes |
+| Build a DACPAC from SQL definitions | Yes | Yes |
+| Inspect package metadata and object scripts | Yes | Yes |
+| Generate a database CREATE script | Yes | Yes |
+| Generate a deployment script between packages | Yes | Yes |
+| Generate an XML deployment report | Yes | Yes |
 
 ## Install
 
-Builds produce `artifacts/mssql-dacfx-0.1.0.tgz`, installable before registry publication:
-
 ```sh
-npm install /path/to/mssql-dacfx-0.1.0.tgz
+npm install mssql-dacfx
 # or
-bun add /path/to/mssql-dacfx-0.1.0.tgz
+bun add mssql-dacfx
 ```
 
-After publishing to npm, use `npm install mssql-dacfx` or `bun add mssql-dacfx`.
+Use **Node.js 22+ or Bun 1.4+**. The package is ESM and includes TypeScript declarations, prebuilt runtime assets, and dependency licenses. It has no npm runtime dependencies or installation scripts.
 
-## Bun / Node.js
+## Bun and Node.js: use WASM
 
 ```ts
 import { writeFile } from 'node:fs/promises';
 import { createDacFx } from 'mssql-dacfx';
 
-const dac = await createDacFx();
+const dac = await createDacFx({ runtime: 'wasm' });
 const files = [
   { name: 'dbo/Items.sql', sql: 'CREATE TABLE dbo.Items (Id int NOT NULL PRIMARY KEY);' },
 ];
@@ -43,7 +43,8 @@ console.log(await dac.validateSql(files, { targetVersion: 'Sql160' }));
 const { dacpac, diagnostics } = await dac.buildDacpac(files, {
   name: 'Inventory',
   version: '1.0.0.0',
-  targetVersion: 'Sql160', // SQL Server 2022; Sql170 targets SQL Server 2025
+  description: 'Inventory schema',
+  targetVersion: 'Sql160',
 });
 await writeFile('Inventory.dacpac', dacpac);
 console.log(diagnostics);
@@ -51,7 +52,9 @@ console.log(await dac.inspectDacpac(dacpac));
 console.log(await dac.generateCreateScript(dacpac, { databaseName: 'Inventory' }));
 ```
 
-SQL inputs can be a single string or an array of `{ name, sql }` files. Names must be unique, ignoring case. Inputs are database object definitions, not arbitrary query batches or SQLCMD scripts. An empty input builds an empty schema. This package does not run MSBuild or evaluate `.sqlproj` files, external project references, or SQLCMD variables.
+The packaged WASM assets are located relative to the installed module, independently of the working directory. For bundled server apps, copy the entire `assets/wasm` directory and pass its absolute filesystem path as `assetsPath`.
+
+### Plan a schema change
 
 ```ts
 const { dacpac: current } = await dac.buildDacpac('CREATE TABLE dbo.Items (Id int);');
@@ -63,48 +66,121 @@ const options = {
   deployOptions: { blockOnPossibleDataLoss: true, dropObjectsNotInSource: false },
 };
 
-console.log(await dac.generateDeployScript(desired, current, options));
-console.log(await dac.generateDeployReport(desired, current, options));
+const sql = await dac.generateDeployScript(desired, current, options);
+const reportXml = await dac.generateDeployReport(desired, current, options);
 ```
 
-The **source is the desired schema**, and the **target is the existing schema**. Operations are offline: they do not connect to or modify a SQL Server database. Scripts can contain SQLCMD directives; execute them with an appropriate tool after review. DacFx also controls which existing DACPAC formats and target platforms it can read.
+The **source is the desired schema** and the **target is the existing schema**. These calls generate output; they do not connect to or modify a database. DacFx can put SQLCMD directives and data-loss guards in generated SQL. Run it with a suitable deployment tool after review.
 
-The host is resolved relative to the installed package, independent of the working directory. For bundled apps, copy the complete `assets/host` folder and set `createDacFx({ assetsPath: '/absolute/path/to/host' })`. Optional `dotnetPath` selects the executable, and `timeoutMs` sets the per-operation timeout (default 120 seconds). Each operation starts an isolated host process; calls do not block the JavaScript event loop.
+### Select the .NET host
 
-## WebAssembly
+```ts
+const dac = await createDacFx(); // equivalent to { runtime: 'cli' }
+```
 
-Copy the entire `assets/wasm` directory from the package into your application's static assets, preserving `_framework` and its filenames. Serve `.wasm` as `application/wasm`, `.js` as JavaScript, and `.json` as JSON. Allow the runtime files through your application's CSP. No cross-origin isolation headers are needed.
+The default remains the .NET host for compatibility with 0.1. It exposes the same API and requires **.NET 8 or newer** on PATH. Consumers do not need a .NET SDK. Each operation runs in an isolated child process.
 
-Browser bundlers select the browser export automatically. An explicit entry works in browsers and module workers:
+Host options are `dotnetPath` (executable path or name), `timeoutMs` (per-operation timeout, default `120000`), and `assetsPath` (directory containing `MssqlDac.Host.dll` and its dependencies). The host limits combined stdout/stderr to 128 MiB. These options do not configure the WASM runtime.
+
+## Browsers
+
+Copy **the complete `node_modules/mssql-dacfx/assets/wasm` directory** into your static assets, for example as `/assets/dacfx`. Preserve `_framework` and every filename, including `.dll`, `.mjs`, and worker files.
+
+Threaded .NET requires `SharedArrayBuffer`. Serve your HTML document, application workers, and runtime assets over HTTPS (or localhost) with:
+
+```http
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Embedder-Policy: require-corp
+```
+
+Check `globalThis.crossOriginIsolated === true` in the browser. Serve `.wasm` as `application/wasm`, `.js`/`.mjs` as JavaScript, `.json` as JSON, and `.dll` as binary data. Your content security policy must allow module loading, workers, and WebAssembly compilation. If assets are on another origin, configure CORS/CORP consistently with your isolation policy.
 
 ```ts
 import { createDacFx } from 'mssql-dacfx/browser';
 
 const dac = await createDacFx({ assetsPath: '/assets/dacfx' });
-console.log(await dac.validateSql('CREATE TABLE dbo.Items (Id int);'));
-
-const bytes = new Uint8Array(await (await fetch('/Inventory.dacpac')).arrayBuffer());
-console.log(await dac.inspectDacpac(bytes));
+const { dacpac } = await dac.buildDacpac('CREATE TABLE dbo.Items (Id int);');
+console.log(await dac.inspectDacpac(dacpac));
+console.log(await dac.generateCreateScript(dacpac));
 ```
 
-Bun and Node can also use the packaged WASM files directly:
+Browser bundlers can also select the browser export from `mssql-dacfx` automatically. `assetsPath` is required in browsers and resolves against the document or worker URL. Missing threading support rejects initialization with `DacFxError.code === 'WASM_THREADS_UNAVAILABLE'` and explains the required headers.
+
+### Module workers
+
+Bundle this worker entry with your application and serve it with the isolation headers above:
 
 ```ts
-import { createDacFx } from 'mssql-dacfx';
-const dac = await createDacFx({ runtime: 'wasm' });
-console.log(await dac.validateSql('CREATE TABLE dbo.Items (Id int);'));
+// dacfx-worker.ts
+import { createDacFx } from 'mssql-dacfx/browser';
+
+const ready = createDacFx({ assetsPath: '/assets/dacfx' });
+self.onmessage = async ({ data }) => {
+  try {
+    const result = await (await ready).buildDacpac(data.sql);
+    self.postMessage({ id: data.id, result }, [result.dacpac.buffer]);
+  } catch (error) {
+    self.postMessage({ id: data.id, error: String(error) });
+  }
+};
 ```
 
-`WasmDacFx` exposes only `validateSql` and `inspectDacpac`. DacFx's package writer calls `FileVersionInfo.GetVersionInfo` while constructing origin metadata; that API throws `PlatformNotSupportedException` on WASM. Deployment planning waits on monitors, also unsupported by the single-threaded .NET browser runtime. These operations use the server host; this package does not patch Microsoft's assemblies or substitute a different SQL engine.
+Create it with `new Worker(new URL('./dacfx-worker.ts', import.meta.url), { type: 'module' })`. A worker is useful for large schemas because input/output encoding and initialization still do work in the caller's JS realm. Terminating your application worker releases its runtime.
 
-WASM initialization is shared across concurrent clients at the same asset URL. It lives for the lifetime of the JS realm. Each request disposes its schema model, package, and streams. Operations execute synchronously inside WASM, so use a module worker for large schemas. DacFx is reflection-heavy; trimming is disabled and full globalization data is included. Expect a substantially larger download than a JavaScript parser.
+## API reference
 
-## Errors and API
+Every method returns a promise. `DacFx` and `WasmDacFx` describe the same six methods.
 
-All methods return promises. `validateSql` returns `{ valid, diagnostics }` for schema errors. `buildDacpac` rejects invalid schemas with `DacFxError` and code `SCHEMA_INVALID`; its `diagnostics` field contains the DacFx messages. Other DacFx failures also reject with `DacFxError`. Source names are retained when available. DacFx validation messages do not always expose source positions; `line` and `column` are `0` when unknown.
+| Method | Result |
+| --- | --- |
+| `validateSql(input, modelOptions?)` | `{ valid, diagnostics }` |
+| `buildDacpac(input, buildOptions?)` | `{ dacpac: Uint8Array, diagnostics }` |
+| `inspectDacpac(dacpac)` | `{ name, version, description, targetVersion, objects }` |
+| `generateCreateScript(dacpac, scriptOptions?)` | SQL string |
+| `generateDeployScript(source, target, scriptOptions?)` | SQL string |
+| `generateDeployReport(source, target, scriptOptions?)` | XML string |
+
+### SQL inputs and target platforms
+
+`input` is a SQL string or an array of `{ name, sql }` files. File names must be nonempty and unique, ignoring case. Separate multiple object definitions in one string with `GO`, or supply one object per file. Empty input represents an empty schema.
+
+These are schema definitions, rather than arbitrary query batches. The package does not evaluate `.sqlproj` files, run MSBuild, resolve external project references, substitute SQLCMD variables, or expose DacFx's live database deployment/extraction APIs. It is an offline API wrapper, not a binding for every public member of the DacFx assemblies.
+
+Model options are `targetVersion` and `collation`. Build options also accept `name` (default `Database`), `version` (default `1.0.0.0`, two to four numeric components), and `description` (default empty).
+
+| `targetVersion` | Platform |
+| --- | --- |
+| `Sql110` / `Sql120` / `Sql130` | SQL Server 2012 / 2014 / 2016 |
+| `Sql140` / `Sql150` / `Sql160` | SQL Server 2017 / 2019 / 2022 |
+| `Sql170` | SQL Server 2025 |
+| `SqlAzure` | Azure SQL Database |
+| `SqlDw` | Azure Synapse dedicated SQL pool |
+
+The default is `Sql160`. DacFx validates syntax and features against the selected platform. Not every SQL construct is valid on every target.
+
+### Package inspection and deployment options
+
+`objects` contains user-defined named objects with `{ name, type, script }`, sorted by name and type. Names use SQL identifier notation such as `[dbo].[Items]`. `script` is `null` when DacFx cannot provide an object script.
+
+Script options accept `databaseName` (default `Database`) and `deployOptions`. All these deployment options are available in both runtimes:
+
+| Deployment option | Default | Effect |
+| --- | --- | --- |
+| `blockOnPossibleDataLoss` | `true` | Include DacFx safeguards for changes that might lose data |
+| `dropObjectsNotInSource` | `false` | Drop target objects absent from the source |
+| `ignorePermissions` | `false` | Ignore permission differences |
+| `ignoreRoleMembership` | `false` | Ignore role membership differences |
+| `includeCompositeObjects` | `false` | Include composite objects from packages that contain them |
+
+DacFx determines compatibility when reading existing DACPAC formats or comparing packages targeting different platforms.
+
+### Diagnostics and errors
+
+`validateSql` returns schema errors as diagnostics. `buildDacpac` rejects an invalid schema with `DacFxError` and code `SCHEMA_INVALID`. Diagnostics contain `code`, `severity`, `message`, `sourceName`, `line`, and `column`. Source names are retained where available; unavailable positions are `0`.
 
 ```ts
 import { DacFxError } from 'mssql-dacfx';
+
 try {
   await dac.buildDacpac('CREATE TABLE (');
 } catch (error) {
@@ -113,11 +189,28 @@ try {
 }
 ```
 
-The full declarations are exported from the package, including `DacFx`, `WasmDacFx`, `SqlFile`, `BuildOptions`, `DeployOptions`, and `PackageInfo`. Available deployment options are `blockOnPossibleDataLoss`, `dropObjectsNotInSource`, `ignorePermissions`, `ignoreRoleMembership`, and `includeCompositeObjects`.
+Other engine failures reject with `DacFxError`; invalid JavaScript argument shapes can throw `TypeError`. A failed request does not prevent subsequent requests on the same WASM client.
 
-## Development and packaging
+## How the WASM build works
 
-Requires Node 22+, npm, Bun 1.4+, the .NET 10.0.402 SDK pinned by `global.json`, and Chromium for the browser checks. A newer .NET runtime can run the bundled host through major-version roll-forward. The build uses the .NET 8 browser runtime; no WASM workload is needed because it does not use AOT or native relinking.
+The C# bridge calls the same public DacFx APIs in both runtimes. WASM uses the pinned **.NET 8.0.33 multithreaded browser runtime**. Calls execute on .NET background threads, allowing DacFx's internal task waits to complete. Requests sharing an asset URL are queued, and concurrent initialization reuses one runtime per JS realm. Idle WASM clients do not keep a Bun/Node process alive.
+
+Two compatibility adaptations make the offline API work:
+
+- A small MIT-licensed `FileVersionInfo` replacement reads real version attributes from loaded managed assemblies. DacFx uses these when writing package origin metadata; the stock browser implementation throws.
+- The build adapts the MIT-licensed .NET JavaScript loader for module workers, Node/Bun worker messages and transferred ports, and hosting the runtime inside an application worker. Build-time checks require the pinned runtime and expected patch sites, and verify asset integrity hashes.
+
+**Microsoft's DacFx assemblies are not patched.** No operation falls back to the native host or an HTTP service. .NET's upstream WASM threading support remains experimental; the package tests its pinned compatibility build on Node, Bun, Chromium, and a Chromium module worker. See the [.NET threading documentation](https://github.com/dotnet/runtime/blob/v8.0.0/src/mono/wasm/threads.md).
+
+Trimming is disabled because DacFx relies on reflection. Full globalization data is included. Expect a larger download and memory footprint than a JavaScript SQL parser. The runtime remains allocated until its JS realm exits.
+
+### Upgrading from 0.1
+
+WASM now exposes package creation and all script/report methods. Existing browser deployments must add the cross-origin isolation headers and deploy the entire updated assets directory. `WasmDacFx` is now an alias for the full `DacFx` interface. The default Bun/Node runtime remains `cli`.
+
+## Build, test, and publish
+
+Development requires Node 22+, npm, Bun 1.4+, the **.NET 10.0.403 SDK** pinned in `global.json`, and Chromium. No WASM workload is needed: builds use the precompiled interpreter runtime, without AOT or native relinking.
 
 ```sh
 npm ci
@@ -125,17 +218,15 @@ npm run build
 npm run typecheck
 npm test
 npm run test:bun
-npx playwright install chromium
+npx playwright install --no-shell chromium
 npm run test:browser
 npm run test:package
 ```
 
-The package test packs the actual npm tarball, installs it without scripts into a temporary consumer, and runs Bun/Node host and WASM checks from that unrelated working directory. It also verifies the installed browser entry in Chromium and a module worker. `prepack` refuses incomplete builds. There are no npm runtime dependencies.
+Tests cover all six operations, all exposed target versions, deployment options, invalid input, package interchange with native DacFx, concurrent requests, and a WASM-only process with no .NET executable on PATH. Browser tests exercise both a page and a module worker. `test:package` installs the actual npm tarball without scripts into a temporary consumer and tests Bun, Node, and browser entries from that location. `prepack` verifies runtime assets, hashes, and licenses.
 
-Publishing runs through [GitHub Actions](https://github.com/iteufel/mssql-project-sql/actions/workflows/publish.yml). Create a GitHub release tagged `vX.Y.Z` matching `package.json`, or dispatch `publish.yml`. The workflow builds and tests the tarball on the runner and publishes it with npm provenance.
-
-For the first publication, dispatch the workflow with `bootstrap=true`. Complete the npm browser sign-in and any publish/trust approvals linked in the job log. The workflow then configures npm trusted publishing for `iteufel/mssql-project-sql` and `publish.yml`, and logs out. Subsequent releases authenticate through OIDC without an npm token secret. If a sign-in link expires, use the newest link from the retry. Publication is never performed by the local build scripts.
+Publishing runs only through [GitHub Actions](https://github.com/iteufel/mssql-project-sql/actions/workflows/publish.yml). Publish a GitHub release tagged `vX.Y.Z` matching `package.json`, or dispatch `publish.yml`. The workflow builds and tests the package before publishing with npm provenance. Trusted publishing is configured for this repository and workflow, so normal releases use OIDC without an npm token secret. The workflow's `bootstrap` input is reserved for setting up a new publisher.
 
 ## Licenses
 
-The wrapper and bridge are MIT licensed. Microsoft DacFx is proprietary Distributable Code under its own Microsoft license; it is not covered by this repository's MIT license. Bundled .NET and other dependencies retain their respective terms. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and the original files under `licenses/`, generated from the pinned restored packages. This is an independent package, not a Microsoft product.
+The wrapper, bridge, and compatibility code are MIT licensed. Microsoft DacFx is proprietary Distributable Code under its own Microsoft license; it is not covered by this repository's MIT license. Bundled .NET and other dependencies retain their terms. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and the original files under `licenses/`, generated from pinned restored packages. This is an independent package, not a Microsoft product.

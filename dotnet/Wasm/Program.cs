@@ -8,5 +8,5 @@ return;
 public static partial class JsExports
 {
     [JSExport]
-    public static string Invoke(string request) => Bridge.Invoke(request);
+    public static Task<string> Invoke(string request) => Task.Run(() => Bridge.Invoke(request));
 }

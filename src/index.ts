@@ -2,16 +2,13 @@ import { access } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { resolve, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { createClient, createWasmClient, DacFxError, type Transport } from './client.js';
+import { createClient, DacFxError, type Transport } from './client.js';
 import { loadWasm } from './wasm.js';
-import type { CliOptions, DacFx, InitOptions, WasmDacFx, WasmOptions } from './types.js';
+import type { DacFx, InitOptions } from './types.js';
 export { DacFxError } from './client.js';
 export type * from './types.js';
 
-export function createDacFx(options: WasmOptions & { runtime: 'wasm' }): Promise<WasmDacFx>;
-export function createDacFx(options?: CliOptions): Promise<DacFx>;
-export function createDacFx(options: InitOptions): Promise<DacFx | WasmDacFx>;
-export async function createDacFx(options: InitOptions = {}): Promise<DacFx | WasmDacFx> {
+export async function createDacFx(options: InitOptions = {}): Promise<DacFx> {
   const runtime = options.runtime ?? 'cli';
   if (runtime !== 'cli' && runtime !== 'wasm') throw new TypeError(`Unknown runtime: ${runtime}`);
   const assets = options.assetsPath
@@ -22,7 +19,7 @@ export async function createDacFx(options: InitOptions = {}): Promise<DacFx | Wa
   catch {
     throw new DacFxError(`DacFx runtime assets are missing at ${entry}. Build the package or supply assetsPath.`, 'ASSETS_MISSING');
   }
-  if (options.runtime === 'wasm') return createWasmClient(await loadWasm(pathToFileURL(entry).href));
+  if (options.runtime === 'wasm') return createClient(await loadWasm(pathToFileURL(entry).href));
   const timeoutMs = options.timeoutMs ?? 120_000;
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0 || timeoutMs > 2_147_483_647) {
     throw new TypeError('timeoutMs must be a positive number no greater than 2147483647.');

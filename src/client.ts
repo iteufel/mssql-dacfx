@@ -1,5 +1,5 @@
 import type {
-  BuildResult, DacFx, Diagnostic, PackageInfo, SqlInput, ValidationResult, WasmDacFx,
+  BuildResult, DacFx, Diagnostic, PackageInfo, SqlInput, ValidationResult,
 } from './types.js';
 
 export class DacFxError extends Error {
@@ -76,9 +76,4 @@ export function createClient(transport: Transport): DacFx {
       return invoke<string>('deployReport', { ...options, source: encode(source), target: encode(target) });
     },
   };
-}
-
-export function createWasmClient(transport: Transport): WasmDacFx {
-  const client = createClient(transport);
-  return { validateSql: client.validateSql, inspectDacpac: client.inspectDacpac };
 }

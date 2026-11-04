@@ -74,19 +74,18 @@ export interface ScriptOptions {
   deployOptions?: DeployOptions;
 }
 
-/** Operations supported by the single-threaded .NET WebAssembly runtime. */
-export interface WasmDacFx {
+/** All operations are offline. The source package is the desired schema. */
+export interface DacFx {
   validateSql(input: SqlInput, options?: ModelOptions): Promise<ValidationResult>;
   inspectDacpac(dacpac: Uint8Array): Promise<PackageInfo>;
-}
-
-/** All operations are offline. The source package is the desired schema. */
-export interface DacFx extends WasmDacFx {
   buildDacpac(input: SqlInput, options?: BuildOptions): Promise<BuildResult>;
   generateCreateScript(dacpac: Uint8Array, options?: ScriptOptions): Promise<string>;
   generateDeployScript(source: Uint8Array, target: Uint8Array, options?: ScriptOptions): Promise<string>;
   generateDeployReport(source: Uint8Array, target: Uint8Array, options?: ScriptOptions): Promise<string>;
 }
+
+/** The WebAssembly runtime supports the same operations as the native host. */
+export type WasmDacFx = DacFx;
 
 export interface WasmOptions {
   /** Directory containing _framework. Required in browsers; file path in Bun/Node. */

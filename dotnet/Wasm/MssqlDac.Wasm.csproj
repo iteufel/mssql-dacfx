@@ -4,6 +4,8 @@
     <PublishTrimmed>false</PublishTrimmed>
     <BlazorEnableCompression>false</BlazorEnableCompression>
     <BlazorWebAssemblyLoadAllGlobalizationData>true</BlazorWebAssemblyLoadAllGlobalizationData>
+    <WasmEnableThreads>true</WasmEnableThreads>
+    <RuntimeFrameworkVersion>8.0.33</RuntimeFrameworkVersion>
   </PropertyGroup>
   <ItemGroup>
     <!-- An explicit reference takes precedence over packs selected by installed workloads. -->

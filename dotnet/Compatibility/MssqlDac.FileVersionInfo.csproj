@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>System.Diagnostics.FileVersionInfo</AssemblyName>
+    <AssemblyVersion>8.0.0.0</AssemblyVersion>
+    <!-- This assembly intentionally implements the framework type for WASM. -->
+    <NoWarn>$(NoWarn);CS0436</NoWarn>
+  </PropertyGroup>
+</Project>

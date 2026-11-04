@@ -13,7 +13,7 @@ Each bundled dependency retains its own license. The original license and notice
 | Azure.Storage.Blobs/12.18.0 | MIT |  |
 | Azure.Storage.Common/12.17.0 | MIT |  |
 | Microsoft.ApplicationInsights/2.23.0 | MIT |  |
-| Microsoft.AspNetCore.App.Ref/8.0.32 | MIT | [THIRD-PARTY-NOTICES.TXT](licenses/Microsoft.AspNetCore.App.Ref-8.0.32/THIRD-PARTY-NOTICES.TXT) |
+| Microsoft.AspNetCore.App.Ref/8.0.33 | MIT | [THIRD-PARTY-NOTICES.TXT](licenses/Microsoft.AspNetCore.App.Ref-8.0.33/THIRD-PARTY-NOTICES.TXT) |
 | Microsoft.AspNetCore.Authorization/8.0.30 | MIT | [THIRD-PARTY-NOTICES.TXT](licenses/Microsoft.AspNetCore.Authorization-8.0.30/THIRD-PARTY-NOTICES.TXT) |
 | Microsoft.AspNetCore.Components.Analyzers/8.0.30 | MIT | [THIRD-PARTY-NOTICES.txt](licenses/Microsoft.AspNetCore.Components.Analyzers-8.0.30/THIRD-PARTY-NOTICES.txt) |
 | Microsoft.AspNetCore.Components.Forms/8.0.30 | MIT | [THIRD-PARTY-NOTICES.txt](licenses/Microsoft.AspNetCore.Components.Forms-8.0.30/THIRD-PARTY-NOTICES.txt) |
@@ -54,8 +54,8 @@ Each bundled dependency retains its own license. The original license and notice
 | Microsoft.JSInterop.WebAssembly/8.0.30 | MIT | [THIRD-PARTY-NOTICES.txt](licenses/Microsoft.JSInterop.WebAssembly-8.0.30/THIRD-PARTY-NOTICES.txt) |
 | Microsoft.JSInterop/8.0.30 | MIT | [THIRD-PARTY-NOTICES.TXT](licenses/Microsoft.JSInterop-8.0.30/THIRD-PARTY-NOTICES.TXT) |
 | Microsoft.NET.Sdk.WebAssembly.Pack/10.0.13 | MIT | [THIRD-PARTY-NOTICES.TXT](licenses/Microsoft.NET.Sdk.WebAssembly.Pack-10.0.13/THIRD-PARTY-NOTICES.TXT) |
-| Microsoft.NETCore.App.Ref/8.0.32 | MIT | [LICENSE.TXT](licenses/Microsoft.NETCore.App.Ref-8.0.32/LICENSE.TXT), [THIRD-PARTY-NOTICES.TXT](licenses/Microsoft.NETCore.App.Ref-8.0.32/THIRD-PARTY-NOTICES.TXT) |
-| Microsoft.NETCore.App.Runtime.Mono.browser-wasm/8.0.32 | MIT | [LICENSE.TXT](licenses/Microsoft.NETCore.App.Runtime.Mono.browser-wasm-8.0.32/LICENSE.TXT), [THIRD-PARTY-NOTICES.TXT](licenses/Microsoft.NETCore.App.Runtime.Mono.browser-wasm-8.0.32/THIRD-PARTY-NOTICES.TXT) |
+| Microsoft.NETCore.App.Ref/8.0.33 | MIT | [LICENSE.TXT](licenses/Microsoft.NETCore.App.Ref-8.0.33/LICENSE.TXT), [THIRD-PARTY-NOTICES.TXT](licenses/Microsoft.NETCore.App.Ref-8.0.33/THIRD-PARTY-NOTICES.TXT) |
+| Microsoft.NETCore.App.Runtime.Mono.multithread.browser-wasm/8.0.33 | MIT | [LICENSE.TXT](licenses/Microsoft.NETCore.App.Runtime.Mono.multithread.browser-wasm-8.0.33/LICENSE.TXT), [THIRD-PARTY-NOTICES.TXT](licenses/Microsoft.NETCore.App.Runtime.Mono.multithread.browser-wasm-8.0.33/THIRD-PARTY-NOTICES.TXT) |
 | Microsoft.NETCore.Platforms/2.0.0 | [Upstream terms](https://github.com/dotnet/corefx/blob/master/LICENSE.TXT) | [LICENSE.TXT](licenses/Microsoft.NETCore.Platforms-2.0.0/LICENSE.TXT), [THIRD-PARTY-NOTICES.TXT](licenses/Microsoft.NETCore.Platforms-2.0.0/THIRD-PARTY-NOTICES.TXT) |
 | Microsoft.NETCore.Targets/1.1.0 | [Upstream terms](http://go.microsoft.com/fwlink/?LinkId=329770) | [ThirdPartyNotices.txt](licenses/Microsoft.NETCore.Targets-1.1.0/ThirdPartyNotices.txt), [dotnet_library_license.txt](licenses/Microsoft.NETCore.Targets-1.1.0/dotnet_library_license.txt) |
 | Microsoft.SqlServer.DacFx/170.5.96 | See included terms | [license.txt](licenses/Microsoft.SqlServer.DacFx-170.5.96/license.txt) |

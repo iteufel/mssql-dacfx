@@ -1,6 +1,6 @@
 {
   "name": "mssql-dacfx",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Microsoft SQL Server DacFx schema validation, DACPAC builds and offline deployment scripts for Bun, Node.js and WebAssembly.",
   "type": "module",
   "license": "MIT",
