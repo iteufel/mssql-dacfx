@@ -9,7 +9,9 @@ export class Worker extends NodeWorker {
   #listeners = new Map();
 
   constructor(url, options) {
-    super(new URL(url), { ...options, type: 'module', execArgv: process.execArgv.filter(arg => !arg.startsWith('--input-type')) });
+    // These are internal runtime workers, not application entry points. Parent
+    // V8/test-runner flags can be rejected when explicitly passed to Workers.
+    super(new URL(url), { ...options, type: 'module', execArgv: [] });
     workers.add(this);
     this.once('exit', () => workers.delete(this));
     if (references === 0) this.unref();

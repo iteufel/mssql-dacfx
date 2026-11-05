@@ -71,7 +71,9 @@ assert.match(await a.generateCreateScript(first.dacpac), /CREATE TABLE \\[dbo\\]
 assert.match(await b.generateCreateScript(second.dacpac), /CREATE TABLE \\[dbo\\]\\.\\[B\\]/);
 assert.equal(globalThis.Worker, worker);
 console.log('WASM completed');`;
-  const child = spawnSync(process.execPath, ['--input-type=module', '-e', code], {
+  // Node accepts this V8 flag for the process but rejects it in Worker.execArgv.
+  const flags = process.versions.bun ? [] : ['--stack-trace-limit=10'];
+  const child = spawnSync(process.execPath, [...flags, '--input-type=module', '-e', code], {
     encoding: 'utf8', timeout: 45_000, env: { ...process.env, PATH: '' },
   });
   assert.ifError(child.error);
