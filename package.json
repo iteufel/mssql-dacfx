@@ -64,10 +64,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/iteufel/mssql-project-sql.git"
+    "url": "git+https://github.com/iteufel/mssql-dacfx.git"
   },
-  "homepage": "https://github.com/iteufel/mssql-project-sql#readme",
+  "homepage": "https://github.com/iteufel/mssql-dacfx#readme",
   "bugs": {
-    "url": "https://github.com/iteufel/mssql-project-sql/issues"
+    "url": "https://github.com/iteufel/mssql-dacfx/issues"
   }
 }

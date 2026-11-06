@@ -65,7 +65,7 @@ jobs:
           NPM_TRUST_ID: ${{ inputs.replace_trust_id }}
         run: |
           script -q -e -c 'npm trust revoke mssql-dacfx --id "$NPM_TRUST_ID" --yes --no-browser' /dev/null
-          script -q -e -c 'npm trust github mssql-dacfx --repo iteufel/mssql-project-sql --file publish.yml --allow-publish --yes --no-browser' /dev/null
+          script -q -e -c 'npm trust github mssql-dacfx --repo iteufel/mssql-dacfx --file publish.yml --allow-publish --yes --no-browser' /dev/null
       - name: Remove recovery login before OIDC publishing
         if: always() && steps.recovery_login.outcome == 'success'
         run: npm logout --registry=https://registry.npmjs.org
@@ -110,7 +110,7 @@ jobs:
       - name: Configure trusted publishing for future releases
         if: inputs.bootstrap
         timeout-minutes: 10
-        run: script -q -e -c 'npm trust github mssql-dacfx --repo iteufel/mssql-project-sql --file publish.yml --allow-publish --yes --no-browser' /dev/null
+        run: script -q -e -c 'npm trust github mssql-dacfx --repo iteufel/mssql-dacfx --file publish.yml --allow-publish --yes --no-browser' /dev/null
       - name: Remove bootstrap login
         if: always() && inputs.bootstrap && steps.npm_login.outcome == 'success'
         run: npm logout --registry=https://registry.npmjs.org
