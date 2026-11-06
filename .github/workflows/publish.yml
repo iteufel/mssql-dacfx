@@ -8,6 +8,10 @@ on:
         description: 'First publish: approve npm browser links in the job log, then configure trusted publishing'
         type: boolean
         default: false
+      replace_trust_id:
+        description: 'Repair an expired publisher: its npm trust ID (browser approval runs on this GitHub runner)'
+        type: string
+        default: ''
 permissions:
   contents: read
 concurrency:
@@ -16,7 +20,7 @@ concurrency:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    timeout-minutes: 65
     permissions:
       contents: read
       id-token: write
@@ -32,6 +36,39 @@ jobs:
         with:
           bun-version: '1.4.3'
       - run: npm install --global npm@11.21.1
+      - name: Validate publisher recovery inputs
+        env:
+          BOOTSTRAP: ${{ inputs.bootstrap }}
+          NPM_TRUST_ID: ${{ inputs.replace_trust_id }}
+        run: |
+          if [[ -n "$NPM_TRUST_ID" ]]; then
+            [[ "$BOOTSTRAP" != "true" ]] || { echo "::error::Choose bootstrap or publisher recovery, not both."; exit 1; }
+            [[ "$NPM_TRUST_ID" =~ ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$ ]] || { echo "::error::replace_trust_id must be an npm trusted-publisher UUID."; exit 1; }
+          fi
+      - name: Sign in to npm on GitHub for publisher recovery
+        id: recovery_login
+        if: inputs.replace_trust_id != ''
+        timeout-minutes: 17
+        run: |
+          for attempt in 1 2 3; do
+            echo "::notice::Approve the newest npm login link below. Credentials stay on this GitHub runner."
+            if npm login --auth-type=web --no-browser </dev/null; then
+              exit 0
+            fi
+          done
+          echo "::error::npm sign-in did not complete. Re-run publisher recovery for a fresh link."
+          exit 1
+      - name: Replace expired npm trusted publisher
+        if: inputs.replace_trust_id != ''
+        timeout-minutes: 10
+        env:
+          NPM_TRUST_ID: ${{ inputs.replace_trust_id }}
+        run: |
+          script -q -e -c 'npm trust revoke mssql-dacfx --id "$NPM_TRUST_ID" --yes --no-browser' /dev/null
+          script -q -e -c 'npm trust github mssql-dacfx --repo iteufel/mssql-project-sql --file publish.yml --allow-publish --yes --no-browser' /dev/null
+      - name: Remove recovery login before OIDC publishing
+        if: always() && steps.recovery_login.outcome == 'success'
+        run: npm logout --registry=https://registry.npmjs.org
       - name: Check npm trusted-publisher authentication
         if: ${{ !inputs.bootstrap }}
         run: node scripts/check-publish-auth.mjs
